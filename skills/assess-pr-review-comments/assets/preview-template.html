@@ -1,0 +1,99 @@
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<h2 class="sr">Numbered assessment of PR review comments</h2>
+<style>
+.ar *{box-sizing:border-box}
+.ar{--bg:#e6ecea;--panel:#f6f9f8;--codebg:#fbfdfc;--ink:#14262b;--mute:#566d72;--line:#b7c7c5;--line2:#8aa09e;--accent:#0b6d77;--onaccent:#fff;--focus:#d1432a;--hover:rgba(11,109,119,.1);--add:#176b3f;--onadd:#fff;--warn:#8a5a00;--del:#a1291f;
+--sans:"Familjen Grotesk",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+background:var(--bg) radial-gradient(var(--line) 1px,transparent 1.2px) 0 0/22px 22px;color:var(--ink);font:16px/1.5 var(--sans);padding:18px 16px}
+@media (prefers-color-scheme:dark){.ar{--bg:#0e1a1e;--panel:#15262b;--codebg:#101f23;--ink:#dcebe9;--mute:#8aa4a6;--line:#2a4247;--line2:#4d6d72;--accent:#5ec8d2;--onaccent:#06262a;--focus:#ffb26b;--hover:rgba(94,200,210,.1);--add:#7fe0a8;--onadd:#06262a;--warn:#ffc971;--del:#ff9a90}}
+.ar button,.ar textarea{font:inherit;color:inherit}
+.ar button{cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:none;transform:none;margin:0;height:auto;width:auto;border-radius:2px;background:transparent}
+.ar button:active{transform:none}
+.ar h1,.ar h3,.ar p{margin:0}
+.ar :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ar .mute{color:var(--mute)}
+.hd{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;border-bottom:2px solid var(--ink);padding-bottom:12px;flex-wrap:wrap}
+.hd h1{font-size:1.7rem;line-height:1.15;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+.hd .src{color:var(--mute);font-size:.92rem;max-width:90ch}
+.sts{display:flex;gap:18px;flex-wrap:wrap}
+.sts div{display:grid;justify-items:start}
+.sts b{font:700 1.5rem/1.1 var(--mono)}
+.sts span{font-size:.78rem;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.lay{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:18px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line2);padding:14px 16px}
+.side{padding:10px}
+.nvh{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:2px 6px 8px}
+.idx{display:grid;gap:4px;list-style:none;margin:0;padding:0}
+.ar button.it{border-radius:2px!important;width:100%;display:grid;grid-template-columns:22px minmax(0,1fr) 10px;gap:8px;align-items:start;text-align:left;background:transparent;border:1px solid transparent;border-radius:2px;padding:6px}
+.ar button.it:hover{background:var(--hover)}
+.it.sel{border-color:var(--accent);background:var(--hover)}
+.ord{font:700 11px/1 var(--mono);border:1.5px solid currentColor;border-radius:50%;width:22px;height:22px;display:grid;place-items:center;flex:none}
+.it .loc{font:600 12px/1.3 var(--mono);overflow-wrap:anywhere}
+.it .q{display:block;font-size:.78rem;color:var(--mute);line-height:1.35;margin-top:1px}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:5px;border:1.5px solid currentColor}
+.dot.fixed,.tag.fixed{color:var(--add)}.dot.partly,.tag.partly{color:var(--warn)}.dot.reply,.tag.reply{color:var(--accent)}.dot.none,.tag.none{color:var(--mute)}
+.dot.fixed{background:currentColor}.dot.partly{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.tag{display:inline-block;padding:0 7px;border:1.5px solid currentColor;border-radius:3px;font:700 10.5px/17px var(--sans);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.rk{font:700 15px/28px var(--mono);width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);text-align:center;flex:none}
+.card{padding:0}
+.chd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line2)}
+.chd .path{font:600 14px/1.3 var(--mono);overflow-wrap:anywhere;flex:1;min-width:200px}
+.of{font-size:.82rem;color:var(--mute);font-family:var(--mono)}
+.body{display:grid;gap:12px;padding:12px 14px}
+.k{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin-bottom:3px}
+.quote{border:1px solid var(--line);border-left:4px solid var(--line2);background:var(--codebg);padding:8px 12px;font-size:.95rem}
+.fix{border-left:4px solid var(--add);background:var(--codebg);padding:8px 12px;font-size:.95rem}
+textarea.draft{width:100%;display:block;resize:none;overflow:hidden;min-height:3em;font:13.5px/1.55 var(--mono);color:var(--ink);background:var(--codebg);border:1px solid var(--line);border-radius:2px;padding:8px 10px}
+.rh{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3px}.rh .k{margin:0}
+.acts{display:flex;gap:6px}
+.ar button.b{border-radius:2px!important;border:1px solid var(--ink);border-radius:2px;padding:0 12px;font:600 12px/22px var(--sans)}
+.ar button.b:hover{background:var(--hover)}
+.ar button.b.pri{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+.ar button.b.done{border-color:var(--add);color:var(--add)}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.ar button.btn{border-radius:2px!important;border:1px solid var(--ink);padding:6px 14px;border-radius:2px;min-height:36px;font-weight:500}
+.ar button.btn:hover{background:var(--hover)}
+.todo{margin-top:16px;font-size:.92rem;border-left:4px solid var(--warn)}
+.todo b{font-weight:700}
+@media (prefers-reduced-motion:reduce){.ar *{transition:none!important;animation:none!important}}
+</style>
+<div class="ar">
+ <div class="hd"><div><h1 id="ttl"></h1><p class="src" id="src"></p></div><div class="sts" id="stats"></div></div>
+ <div class="lay"><nav class="panel side" aria-label="Review threads"><h2 class="nvh">Threads</h2><ol class="idx" id="idx"></ol></nav><div><div class="panel card" id="card"></div><div class="nav"><button class="btn" onclick="go(-1)">&larr; Prev</button><span class="mute" style="font-size:.84rem">Arrow keys also work</span><button class="btn" onclick="go(1)">Next &rarr;</button></div></div></div>
+ <div class="panel todo" id="todo"></div>
+</div>
+<script>
+/* Fill DATA from the assessment. v: fixed | partly | reply | none. Keep text plain (no HTML). */
+var DATA={
+ title:'PR review assessment',
+ source:'',
+ repo:'owner/name',
+ pr:0,
+ stats:{assessed:0,fixed:0,reply:0,none:0},
+ notDone:'',
+ threads:[
+  /* {loc:'file:line', count:1, v:'fixed', label:'Fixed', quote:'"..."', decision:'...', fix:'', reply:'', target:'thread comment id or URL'} */
+ ]};
+var D=DATA.threads,sel=0;
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function fl(b,m){var o=b.textContent;b.textContent=m;b.classList.add('done');setTimeout(function(){b.textContent=o;b.classList.remove('done')},1500)}
+function fit(t){t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px'}
+function ed(i,el){D[i].reply=el.value;fit(el)}
+function rp(i,b){var t=D[i].reply.trim();if(!t){fl(b,'Reply is empty');return}if(typeof sendPrompt!=='function'){fl(b,'Not available');return}sendPrompt('Post this reply with the gh CLI, exactly as written: gh api repos/'+DATA.repo+'/pulls/'+DATA.pr+'/comments/<id>/replies -f body="<text>" (review thread '+(i+1)+', comment '+D[i].target+'; <id> is the numeric comment id, taken from the URL if needed). Then confirm with the link to the posted reply.\n\n'+t);fl(b,'Posting…')}
+function cp(i,b){var ok=false,ta=document.createElement('textarea');ta.value=D[i].reply;ta.style.cssText='position:fixed;left:-999px;top:0';document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);
+if(!ok&&navigator.clipboard){navigator.clipboard.writeText(D[i].reply).then(function(){fl(b,'Copied')},function(){fl(b,'Select and copy')});return}
+fl(b,ok?'Copied':'Select and copy')}
+function go(k){pick(sel+k)}
+function pick(n){sel=Math.max(0,Math.min(D.length-1,n));draw()}
+function draw(){var d=D[sel],s=DATA.stats;
+$('ttl').textContent=DATA.title;$('src').textContent=DATA.source||'';
+$('stats').innerHTML=[['Assessed',s.assessed],['Fixed',s.fixed],['Reply only',s.reply],['No action',s.none]].map(function(x){return '<div><b>'+x[1]+'</b><span>'+x[0]+'</span></div>'}).join('');
+$('idx').innerHTML=D.map(function(x,i){return '<li><button class="it'+(i==sel?' sel':'')+'" onclick="pick('+i+')"'+(i==sel?' aria-current="true"':'')+'><span class="ord">'+(i+1)+'</span><span><span class="loc">'+esc(x.loc)+'</span><span class="q">'+esc(x.quote.length>60?x.quote.slice(0,60)+'…':x.quote)+'</span></span><span class="dot '+x.v+'" title="'+esc(x.label)+'"></span><span class="sr">'+esc(x.label)+'</span></button></li>'}).join('');
+$('card').innerHTML='<div class="chd"><span class="rk">'+(sel+1)+'</span><span class="path">'+esc(d.loc)+(d.count>1?' · '+d.count+' comments':'')+'</span><span class="tag '+d.v+'">'+esc(d.label)+'</span><span class="of">'+(sel+1)+' / '+D.length+'</span></div><div class="body"><div><div class="k">Reviewer</div><div class="quote">'+esc(d.quote)+'</div></div><div><div class="k">Decision</div><div>'+esc(d.decision)+'</div></div>'+(d.fix?'<div><div class="k">Fix</div><div class="fix">'+esc(d.fix)+'</div></div>':'')+'<div><div class="rh"><div class="k">Reply</div>'+(d.reply?'<div class="acts"><button class="b" onclick="cp('+sel+',this)">Copy</button><button class="b pri" onclick="rp('+sel+',this)">Reply</button></div>':'')+'</div>'+(d.reply?'<div class="taw"><textarea class="draft" aria-label="Reply draft '+(sel+1)+'" oninput="ed('+sel+',this)">'+esc(d.reply)+'</textarea></div>':'<div class="mute">none needed</div>')+'</div></div>';
+var ta=document.querySelector('textarea.draft');if(ta)fit(ta);
+$('todo').innerHTML='<b>Not done yet:</b> '+esc(DATA.notDone)}
+document.addEventListener('keydown',function(e){var t=e.target;if(t&&(t.isContentEditable||t.tagName=='TEXTAREA'))return;if(e.key=='ArrowRight'||e.key=='ArrowDown'){e.preventDefault();go(1)}if(e.key=='ArrowLeft'||e.key=='ArrowUp'){e.preventDefault();go(-1)}});
+draw();
+</script>
