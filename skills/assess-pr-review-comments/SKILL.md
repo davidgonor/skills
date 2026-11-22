@@ -1,12 +1,12 @@
 ---
 name: assess-pr-review-comments
-description: Assess PR review feedback when the user asks whether a comment is valid, how to reply, or which unresolved threads to address.
+description: Assess PR review feedback on a specific comment or a PR's unresolved threads.
 ---
 
 # Assess PR review comments
 
-1. **Select the threads.** A pasted comment or comment link scopes the assessment to that comment and any available replies. Otherwise, use the specified PR or find the PR for the current branch. Read every unresolved, current review thread and its replies. Include resolved or outdated threads only when requested. If the PR cannot be identified, ask for it.
-2. **Verify each concern.** Check the current code, the PR's stated intent, relevant tests, and repository conventions. Give every thread a verdict backed by a concrete code path, test, contract, or convention. State any material uncertainty.
+1. **Select the threads.** For a pasted or linked comment, read that comment and its available replies. For a PR-wide assessment, use the specified PR or the current branch's PR, then read every unresolved, current review thread and its replies. Include resolved or outdated threads on request. Ask for the PR if it is needed and cannot be identified.
+2. **Assess and act.** Give each thread a verdict grounded in the current code, tests, contracts, or the PR's stated scope. Flag material uncertainty and apply the action below within the user's requested scope.
 
    | Verdict | Evidence | Action |
    | --- | --- | --- |
@@ -14,10 +14,8 @@ description: Assess PR review feedback when the user asks whether a comment is v
    | False positive | The concern depends on a mistaken reading of the code or behavior | Explain the evidence in a short reply draft. |
    | Out of scope | The observation may be correct, but it does not need to be addressed for this PR | Explain the scope decision in a short reply draft. |
 
-3. **Report.** Give totals for threads assessed, fixed, reply only, and no action. Include one numbered entry per thread with its location, a short quote, the verdict and supporting evidence, the fix if any, and the reply draft or “none needed.” State which changes are uncommitted and which replies are drafts. If no threads qualify, report that directly.
+3. **Report.** Give totals for threads assessed, fixed, reply only, and no action. Number each thread and include its location, a short quote, the verdict and evidence, the fix if any, and the reply draft or “none needed.” Note any uncommitted fixes and unposted drafts. If no threads qualify, report that directly. Otherwise, fill the [HTML template's `DATA` block](assets/preview-template.html) when the host supports inline rendering and every draft has a verified posting target. Use a Markdown table otherwise.
 
-## Report format and reply approval
+## Reply on request
 
-Use the [HTML template](assets/preview-template.html) when the host can render it inline and there is at least one entry. Populate its `DATA` block with the title, source, repository, PR number, totals, pending work, and thread entries. Use the comment ID or URL as each thread's `target`. Keep the template's editable drafts, navigation, and Copy and Reply controls. Use a Markdown table if inline rendering is unavailable or a draft has no verified posting target.
-
-Keep fixes local and replies in draft until the user asks for a specific remote action. The template's Reply control requests posting the edited draft on the identified thread. Verify the repository, PR, and numeric review-comment ID, then post the exact text and return the posted reply link. With GitHub CLI, use `gh api repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -F body=@<draft-file>` with the draft in a file.
+Keep fixes local and replies in draft until the user authorizes a specific remote action. A request from the template's Reply control authorizes posting that edited draft only. Verify the repository, PR, and numeric review-comment ID before posting, then return the posted reply link. Pass multiline text verbatim, for example from a file with `gh api repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -F body=@<draft-file>`.

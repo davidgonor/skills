@@ -52,10 +52,9 @@ Write `data.json` as JSON. This example is for a PR. For local changes, set `mod
 ```
 
 - Set `review.head` to at least the first eight characters of the reviewed PR head SHA.
-- Give each file a unique ID. List dependencies by ID and place each dependency before its callers. Prefer types, then callers, then tests and generated files where dependencies permit.
-- List focus items in descending importance. Reference file IDs and use a new-side diff line for each anchor and any highlighted lines.
-- Use a new-side diff line for each inline draft. Write ready-to-post Markdown with a single concern and a concrete ask or question. `sev` accepts `important`, `question`, `suggestion`, `nit`, or `optional`.
-- The renderer derives hunks and line counts from `change.diff`.
+- Include every diff file once with a unique ID. List dependencies by ID and place each dependency before its callers. Prefer types, then callers, then tests and generated files where dependencies permit.
+- Pick three to six focus items where the change supports them. Order them by importance, reference file IDs, and use new-side diff lines for their anchors and highlights.
+- Write a short review summary. Write each inline draft as ready-to-post Markdown with one concern and a concrete ask or question. `sev` accepts `important`, `question`, `suggestion`, `nit`, or `optional`.
 
 If every file has a draft, `smoke.js` uses the first file for both the posted-draft and collapsed-file checks. The collapsed file hides the draft and can trigger `saved: posted draft is read-only`. If that is the only failure, verify that the draft is read-only after expanding the file in a saved-state fixture. Resolve other render and smoke failures before serving.
 

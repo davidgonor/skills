@@ -12,6 +12,6 @@ The local server writes `feedback.json` alongside `data.json` and exits when the
 
 ## Build the next round
 
-1. Capture the new source using the [initial workflow](../SKILL.md). Save the complete diff as `change.diff` and the changes since the last reviewed snapshot as `round.diff`. Locally, diff the previous snapshot tree against the new one. For a PR, diff the last reviewed head against the new head.
+1. Use **Capture the change** in the [main workflow](../SKILL.md) to refresh the complete `change.diff`. Save the changes since the last review as `round.diff`, using the previous and new snapshot trees locally or the previous and new head SHAs for a PR.
 2. Review `round.diff`. Rebuild the page data for the full change. Keep earlier drafts that the reviewer neither approved nor dismissed, updating their anchors to the new diff, and add the new findings. For local rounds, carry forward the previous comments with their answers as threads. Set the round label and note using the [page data reference](page-data.md).
 3. Render and smoke-test the page. Pass `--round round.diff` to both `render.py` and `serve.py`. Use fresh server state for the round so prior feedback cannot be mistaken for a new submission. Record the new snapshot or head for the next round and hand over the verified URL.
