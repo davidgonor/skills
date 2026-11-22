@@ -95,7 +95,33 @@ def fetch_threads():
                                     "original_line": c.get("original_line"), "url": c["html_url"], "comments": []})
         t["comments"].append({"author": (c.get("user") or {}).get("login", "?"), "at": c["created_at"][:10],
                               "body": plain(c["body"]), "url": c["html_url"]})
-    return list(roots.values())
+    out = list(roots.values())
+    me = gh("api", "user", "--jq", ".login")
+    me = me.stdout.strip() if not me.returncode else ""
+    nodes, cursor = {}, None
+    q = "query($o:String!,$n:String!,$p:Int!,$c:String){repository(owner:$o,name:$n){pullRequest(number:$p){reviewThreads(first:100,after:$c){pageInfo{hasNextPage endCursor} nodes{id isResolved comments(first:1){nodes{databaseId}}}}}}}"
+    owner, name = repo.split("/")
+    while True:
+        args = ["api", "graphql", "-f", "query=" + q, "-f", "o=" + owner, "-f", "n=" + name, "-F", "p=" + str(number)]
+        if cursor:
+            args += ["-f", "c=" + cursor]
+        g = gh(*args)
+        if g.returncode:
+            print("warning: could not read thread resolve state: " + g.stderr.strip())
+            break
+        rt = json.loads(g.stdout)["data"]["repository"]["pullRequest"]["reviewThreads"]
+        for n in rt["nodes"]:
+            for c in n["comments"]["nodes"]:
+                nodes[str(c["databaseId"])] = n
+        if not rt["pageInfo"]["hasNextPage"]:
+            break
+        cursor = rt["pageInfo"]["endCursor"]
+    for t in out:
+        n = nodes.get(t["id"])
+        if n:
+            t["node"], t["resolved"] = n["id"], n["isResolved"]
+        t["mine"] = bool(me) and t["comments"][0]["author"] == me
+    return out
 
 
 head = "DRYRUN"
@@ -113,6 +139,7 @@ if repo:
     file_ref = pr["headRefOid"]
     data["threads"] = fetch_threads()
 thread_ids = {str(t.get("id")) for t in data.get("threads", [])}
+resolvable = {str(t["id"]): t["node"] for t in data.get("threads", []) if t.get("mine") and t.get("node") and not t.get("resolved")}
 data["post"] = {"token": token, "repo": repo or "", "number": number or "", "dry": dry}
 file_cache = {}
 
@@ -178,7 +205,12 @@ def check_review(req):
         if str(r["thread"]) not in thread_ids or not str(r["body"]).strip():
             raise ValueError("unknown thread or empty reply")
         replies.append({"thread": str(r["thread"]), "body": str(r["body"]).strip()})
-    return event, body, cs, files, replies
+    resolves = []
+    for t in req.get("resolves", []):
+        if str(t) not in resolvable:
+            raise ValueError("you can only resolve open threads you started")
+        resolves.append(str(t))
+    return event, body, cs, files, replies, resolves
 
 
 class H(BaseHTTPRequestHandler):
@@ -213,7 +245,7 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/state":
             with lock:
                 s = read_state()
-                s["page"] = {k: req.get(k) for k in ("edits", "dec", "review", "event", "viewed", "own", "nid", "ready")}
+                s["page"] = {k: req.get(k) for k in ("edits", "dec", "review", "event", "viewed", "own", "nid", "ready", "res")}
                 write_state(s)
             return self.send(200, {"ok": True})
         if self.path == "/file":
@@ -225,7 +257,7 @@ class H(BaseHTTPRequestHandler):
             if read_state().get("submitted"):
                 return self.send(409, {"error": "a review was already submitted for this walkthrough"})
             try:
-                event, body, cs, files, replies = check_review(req)
+                event, body, cs, files, replies, resolves = check_review(req)
             except (KeyError, TypeError, ValueError) as e:
                 return self.send(400, {"error": str(e) or "bad request"})
             keys = [str(k) for k in req.get("keys", [])]
@@ -245,6 +277,8 @@ class H(BaseHTTPRequestHandler):
                     print(f"  file {f['path']}\n    " + f["body"].replace("\n", "\n    "))
                 for r in replies:
                     print(f"  reply to thread {r['thread']}\n    " + r["body"].replace("\n", "\n    "))
+                for t in resolves:
+                    print(f"  resolve thread {t}")
                 url, errors = "dry-run", []
             else:
                 payload = json.dumps({"commit_id": head, "event": event, "body": body, "comments": cs})
@@ -262,6 +296,11 @@ class H(BaseHTTPRequestHandler):
                     r = gh("api", "-X", "POST", f"repos/{repo}/pulls/{number}/comments/{rp['thread']}/replies", "-f", f"body={rp['body']}")
                     if r.returncode:
                         errors.append(f"reply to thread {rp['thread']}: {(r.stderr or r.stdout).strip()[:200]}")
+            if not local_repo and not dry:
+                for t in resolves:
+                    r = gh("api", "graphql", "-f", "query=mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}", "-f", "t=" + resolvable[t])
+                    if r.returncode:
+                        errors.append(f"resolve thread {t}: {(r.stderr or r.stdout).strip()[:200]}")
             s = read_state()
             s["submitted"], s["posted"] = url, keys
             write_state(s)

@@ -1,47 +1,23 @@
 ---
 name: assess-pr-review-comments
-description: Assess pull-request review comments for correctness and relevance, then fix valid ones or draft a concise evidence-based reply. Works on a pasted comment, or with no input, on the open comments of the current branch's PR.
+description: Assess PR review feedback when the user asks whether a comment is valid, how to reply, or which unresolved threads to address.
 ---
 
-# Assess PR Review Comments
+# Assess PR review comments
 
-Use this skill when the user wants help deciding whether PR review comments should be addressed. The input may be a pasted comment, a comment link, or nothing.
+1. **Select the threads.** A pasted comment or comment link scopes the assessment to that comment and any available replies. Otherwise, use the specified PR or find the PR for the current branch. Read every unresolved, current review thread and its replies. Include resolved or outdated threads only when requested. If the PR cannot be identified, ask for it.
+2. **Verify each concern.** Check the current code, the PR's stated intent, relevant tests, and repository conventions. Give every thread a verdict backed by a concrete code path, test, contract, or convention. State any material uncertainty.
 
-## Input
+   | Verdict | Evidence | Action |
+   | --- | --- | --- |
+   | Valid | A defect or material gap in the PR's behavior, requirements, security, or maintainability | Make the smallest in-scope local fix and add a test when it would catch a meaningful regression. Draft a reply if the fix differs from the suggestion or addresses only part of it. |
+   | False positive | The concern depends on a mistaken reading of the code or behavior | Explain the evidence in a short reply draft. |
+   | Out of scope | The observation may be correct, but it does not need to be addressed for this PR | Explain the scope decision in a short reply draft. |
 
-- **Pasted comment or link:** assess that one comment.
-- **Nothing given:** find the PR for the current branch (or use the PR number or URL if given), fetch its unresolved review threads, and assess each one. Include the follow-up replies in a thread. Skip resolved and outdated threads unless asked.
-- **No PR found:** ask which PR to use.
+3. **Report.** Give totals for threads assessed, fixed, reply only, and no action. Include one numbered entry per thread with its location, a short quote, the verdict and supporting evidence, the fix if any, and the reply draft or “none needed.” State which changes are uncommitted and which replies are drafts. If no threads qualify, report that directly.
 
-Review the comment against the current code, the PR's stated intent, relevant tests, and repository conventions. Do not treat a reviewer's confidence or identity as evidence that the comment is correct.
+## Report format and reply approval
 
-Classify the comment as one of:
+Use the [HTML template](assets/preview-template.html) when the host can render it inline and there is at least one entry. Populate its `DATA` block with the title, source, repository, PR number, totals, pending work, and thread entries. Use the comment ID or URL as each thread's `target`. Keep the template's editable drafts, navigation, and Copy and Reply controls. Use a Markdown table if inline rendering is unavailable or a draft has no verified posting target.
 
-- **Valid:** It identifies a real defect, regression, requirement gap, security concern, or maintainability issue that is material in this PR.
-- **False positive:** The concern rests on an incorrect reading of the code, behavior, or surrounding context.
-- **Irrelevant / out of scope:** The observation may be true, but it is not required by this PR and does not block the proposed change. Distinguish this from a valid issue that should be fixed now.
-
-Explain the conclusion with concrete repository evidence: identify the relevant code path, test, contract, or documented convention. State any assumptions or uncertainty plainly. Do not invent product intent or claim behavior that the code does not establish.
-
-For a valid comment:
-
-1. Explain why the issue is valid and its likely impact.
-2. Make the smallest appropriate fix within the PR's scope, including tests when they would meaningfully prevent regression.
-3. Summarize the change.
-4. Draft a concise reply for the review thread only if the comment was not fully accepted: for example the fix differs from what the reviewer suggested, only part of it was applied, or part of it was declined. If the comment is 100% valid and fixed exactly as the reviewer expected, skip the reply and say so.
-
-For a false-positive or irrelevant comment:
-
-1. Explain why it does not require a change, grounded in the code or PR scope.
-2. Provide a short, professional reply suitable for the review thread.
-3. Do not modify the code solely to accommodate the comment.
-
-## Summary
-
-Always end with a summary of every assessed comment. When the environment can render inline HTML, build it from [preview-template.html](assets/preview-template.html): fill its `DATA` block (also `title`, a one-line `source`, `repo` as owner/name and `pr` number) and render it as is (numbered index on the left, one thread at a time on the right, editable reply drafts, working Copy and Reply buttons, prev/next and arrow keys; set each thread's `target` to its comment id or URL). The Reply button sends the reply text to the chat via `sendPrompt`, and that click is the user's explicit request to post it: post it on that thread then with `gh api repos/<repo>/pulls/<pr>/comments/<id>/replies -f body=...` (use `-F body=@file` for multi-line text), and confirm with the link. Otherwise use a Markdown table. Show:
-
-- the totals: comments assessed, fixed, replied without a change, no action;
-- one numbered entry per thread (1, 2, 3, ...), grouping a comment with its follow-ups, so the user can refer to entries by number in follow-up messages: file and line, the reviewer's words (short quote), verdict, decision with its evidence in a sentence, the fix (if any), and the reply ready to copy (or "none needed");
-- what is not done yet: fixes not committed, replies not posted.
-
-Never post replies, resolve review threads, push commits, or change the PR remotely unless the user explicitly asks.
+Keep fixes local and replies in draft until the user asks for a specific remote action. The template's Reply control requests posting the edited draft on the identified thread. Verify the repository, PR, and numeric review-comment ID, then post the exact text and return the posted reply link. With GitHub CLI, use `gh api repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -F body=@<draft-file>` with the draft in a file.

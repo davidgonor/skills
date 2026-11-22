@@ -138,6 +138,12 @@ code,pre,textarea{font-family:var(--mono)}
 .stc.posted{border:1px solid var(--add);color:var(--add)}
 .stc.dismissed{border-style:solid}
 .cm.approved{background:linear-gradient(var(--hover),var(--hover)),var(--panel)}
+.cm.approved{border-left-color:var(--add);position:relative;left:-20px}
+.chev{border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;padding:2px 6px;cursor:pointer;margin:0 -2px 0 -6px}
+.chev:hover{color:var(--ink);background:var(--hover)}
+.chip.res-chip{border-color:var(--add);color:var(--add)}
+.cm.cmc>:not(.ch),.th.cmc>:not(.thh){display:none}
+.cm.cmc{gap:0}
 .cm.min{padding:5px 12px;opacity:.75}
 .alld li.st-dismissed,.alld li.st-posted{opacity:.6}
 .verdict{display:flex;flex-wrap:wrap}
@@ -180,6 +186,7 @@ textarea.rb{min-height:3.5em}
 .fhd{position:static}
 .fhd .path{min-width:0;flex-basis:100%;order:-1}
 .cm,.th,.loose .th{margin:6px 8px 10px}
+.cm.approved{left:0}
 .dr{grid-template-columns:4ch 4ch 2ch minmax(max-content,1fr);gap:0 4px}
 .ref{white-space:normal;overflow-wrap:anywhere}
 }

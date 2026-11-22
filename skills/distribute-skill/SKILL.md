@@ -1,22 +1,11 @@
 ---
 name: distribute-skill
-description: Copy an existing skill to the installed agent skill directories on a machine, without creating missing directories or overwriting a conflicting skill without approval.
+description: Distribute an existing local skill to the skill directories of agents already installed on this machine.
 ---
 
-# Distribute Skill
+# Distribute a skill
 
-Given a source skill directory or its `SKILL.md` path, distribute it to the known agent skill directories that already exist. Normalize a `SKILL.md` input to its parent directory. Otherwise, the source must be a directory containing `SKILL.md`; stop and report the problem when it is not.
-
-Run `scripts/distribute_skill.py <source> --inspect` first. It reports all existing target directories and whether a same-named skill already exists in each. Never create a missing agent directory.
-
-Copy every target reported as `missing` with `--copy`. A target reported as `source` is already the source location and needs no action. Do not overwrite a target reported as `conflict`.
-
-For each conflict, use the environment's interactive questioning tool to ask the user whether to:
-
-- replace the target with the source skill;
-- cancel distribution to that target; or
-- compare the two skills.
-
-Include both absolute paths in the question: the source `SKILL.md` and the target `SKILL.md`. If the user chooses compare, provide those paths and wait for their next choice; do not infer that reviewing means approval to replace. Only run `--replace` for a target after the user explicitly chooses replacement.
-
-Use the script's JSON output to report copied, replaced, skipped, and absent target directories. The script copies the complete skill directory, including any scripts, references, assets, and UI metadata.
+1. **Inspect.** Run `python3 scripts/distribute_skill.py <source> --inspect` from this skill's directory. The source can be a skill directory or its `SKILL.md`. Use the JSON target list as the scope. If inspection fails, report the error before copying anything.
+2. **Copy.** For each `missing` target, run the script with `<source> --copy <destination>`. This copies the entire skill directory into an existing agent skill root. A `source` target is already in place.
+3. **Resolve conflicts.** Show both absolute `SKILL.md` paths and offer to compare, skip, or replace each conflicting copy. If the user chooses compare, show the relevant differences and ask what to do with that target. Run `<source> --replace <destination>` only after the user explicitly approves replacement of that copy.
+4. **Report.** Account for every inspected target using the script results. List copies and replacements separately from targets already in place, skipped, pending a decision, or failed.

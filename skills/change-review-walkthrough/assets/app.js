@@ -27,7 +27,7 @@ const EVENTS = LOCAL ? [['QUESTIONS', 'Questions'], ['FIX', 'Fix these'], ['APPR
 
 const S = {cur: START.id, viewed: new Set(), collapsed: new Set(FILES.filter(f => f.generated).map(f => f.id)), edits: {}, dec: {}, event: LOCAL ? 'FIX' : 'COMMENT', ready: false,
   own: [], nid: 0, posted: {}, err: {}, busy: '', copied: '', flash: '', status: '', review: (D.review && D.review.body) || '', reviewUrl: '', reviewErr: '', reviewWarn: '',
-  pv: {}, thOpen: {}, desc: false, onlyRound: false, exp: {}, ft: {}, focusKey: ''};
+  pv: {}, thOpen: {}, cmc: {}, res: {}, desc: false, onlyRound: false, exp: {}, ft: {}, focusKey: ''};
 /* Restore saved edits, decisions and your own comments: from serve.py when served, else from this browser. */
 const STORE = 'walkthrough:' + (D.url || D.title) + ':' + ((D.review && D.review.head) || '') + ':' + (ROUND ? ROUND.label : '');
 const SAVED = D.saved || (() => { try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { return null; } })();
@@ -35,14 +35,14 @@ if (SAVED) {
   Object.assign(S.edits, SAVED.edits || {}); Object.assign(S.dec, SAVED.dec || {});
   if (typeof SAVED.review === 'string') S.review = SAVED.review;
   if (SAVED.event && EVENTS.some(e => e[0] === SAVED.event)) S.event = SAVED.event;
-  S.ready = !!SAVED.ready; S.own = Array.isArray(SAVED.own) ? SAVED.own.filter(o => o && o.key && (byId[o.fid] || o.kind === 'reply')) : []; S.nid = SAVED.nid || S.own.length;
+  Object.assign(S.res, SAVED.res || {}); S.ready = !!SAVED.ready; S.own = Array.isArray(SAVED.own) ? SAVED.own.filter(o => o && o.key && (byId[o.fid] || o.kind === 'reply')) : []; S.nid = SAVED.nid || S.own.length;
   (SAVED.viewed || []).forEach(id => { if (byId[id]) { S.viewed.add(id); S.collapsed.add(id); } });
   S.reviewUrl = SAVED.reviewUrl || '';
   (SAVED.posted || []).forEach(k => { S.posted[k] = S.reviewUrl || 'posted'; });
 }
 let saveTimer = null, lastSaved = '';
 function persist() {
-  const blob = JSON.stringify({edits: S.edits, dec: S.dec, review: S.review, event: S.event, viewed: [...S.viewed], own: S.own, nid: S.nid, ready: S.ready});
+  const blob = JSON.stringify({edits: S.edits, dec: S.dec, review: S.review, event: S.event, viewed: [...S.viewed], own: S.own, nid: S.nid, ready: S.ready, res: S.res});
   if (blob === lastSaved) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -209,13 +209,14 @@ function editor(key, editKey, text, locked, label) {
 }
 const postedLink = u => '<span class="pok">' + (/^https/.test(u) ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">Posted, open on GitHub</a>' : (LOCAL ? 'Sent to Claude' : 'Posted (' + esc(u) + ')')) + '</span>';
 
+const chev = (key, label) => btn('cmc', key, 'chev', S.cmc[key] ? '&#9656;' : '&#9662;', 'cmc-' + key, 'aria-label="' + (S.cmc[key] ? 'Expand ' : 'Compress ') + label + '" aria-expanded="' + !S.cmc[key] + '"');
 function cmBox(c) {
   const st = stateOf(c), posted = S.posted[c.key], fl = S.flash === 'cm-' + c.key ? ' flash' : '';
   const head = '<b>#' + c.n + '</b>' + sevChip(c.sev) + '<span class="ct">' + esc(c.title) + '</span><span class="stc ' + st + '">' + STN[st] + '</span>';
   if (st === 'dismissed')
     return '<div class="cm min ' + c.sev + fl + '" id="cm-' + c.key + '" role="group" aria-label="Dismissed draft ' + c.n + ' on ' + esc(c.ref) + '"><div class="ch">' + head + btn('restore', c.key, 'btn sm', 'Restore', 'restore-' + c.key) + '</div></div>';
-  return '<div class="cm ' + c.sev + ' ' + st + fl + '" id="cm-' + c.key + '" role="group" aria-label="Draft comment ' + c.n + ' on ' + esc(c.ref) + '">' +
-    '<div class="ch">' + head + '</div>' + editor(c.key, c.key, txt(c), !!posted, 'Draft comment ' + c.n) +
+  return '<div class="cm ' + c.sev + ' ' + st + fl + (S.cmc[c.key] ? ' cmc' : '') + '" id="cm-' + c.key + '" role="group" aria-label="Draft comment ' + c.n + ' on ' + esc(c.ref) + '">' +
+    '<div class="ch">' + chev(c.key, 'draft comment') + head + '</div>' + editor(c.key, c.key, txt(c), !!posted, 'Draft comment ' + c.n) +
     '<div class="acts">' + (st === 'posted' ? postedLink(posted)
       : (st === 'approved' ? btn('unapprove', c.key, 'btn sm', 'Unapprove', 'appr-' + c.key) : btn('approve', c.key, 'btn sm pri', 'Approve', 'appr-' + c.key)) +
         btn('dismiss', c.key, 'btn sm', 'Dismiss', 'dis-' + c.key) +
@@ -224,8 +225,8 @@ function cmBox(c) {
 
 function ownBox(o) {
   const st = ownState(o), posted = S.posted[o.key], fl = S.flash === 'cm-' + o.key ? ' flash' : '';
-  return '<div class="cm own ' + st + fl + '" id="cm-' + o.key + '" role="group" aria-label="Your comment, ' + esc(ownLabel(o)) + '">' +
-    '<div class="ch"><span class="chip you-chip">You</span><span class="ct">' + esc(ownLabel(o)) + '</span><span class="stc ' + st + '">' + STN[st] + '</span></div>' +
+  return '<div class="cm own ' + st + fl + (S.cmc[o.key] ? ' cmc' : '') + '" id="cm-' + o.key + '" role="group" aria-label="Your comment, ' + esc(ownLabel(o)) + '">' +
+    '<div class="ch">' + chev(o.key, 'your comment') + '<span class="chip you-chip">You</span><span class="ct">' + esc(ownLabel(o)) + '</span><span class="stc ' + st + '">' + STN[st] + '</span>' + '</div>' +
     editor(o.key, 'own:' + o.key, o.body, !!posted, 'Your comment') +
     '<div class="acts">' + (st === 'posted' ? postedLink(posted)
       : (st === 'approved' ? btn('ownunapprove', o.key, 'btn sm', 'Unapprove', 'oappr-' + o.key) : btn('ownapprove', o.key, 'btn sm pri', 'Approve', 'oappr-' + o.key)) +
@@ -235,14 +236,14 @@ function ownBox(o) {
 
 function thBox(t, loose) {
   const who = [...new Set(t.comments.map(c => c.author))].join(', '), open = S.thOpen[t.id], long = t.comments.reduce((n, c) => n + c.body.length, 0) > 700;
-  const replies = S.own.filter(o => o.kind === 'reply' && String(o.thread) === String(t.id));
-  return '<div class="th" id="th-' + esc(t.id) + '" role="group" aria-label="Existing thread by ' + esc(who) + '"><div class="thh"><span class="thk">' + (LOCAL ? 'Earlier round' : 'Existing thread') + '</span><span>' + t.comments.length + ' comment' + (t.comments.length === 1 ? '' : 's') + ' by ' + esc(who) + '</span>' +
+  const replies = S.own.filter(o => o.kind === 'reply' && String(o.thread) === String(t.id)), resolved = t.resolved || S.res[t.id], canRes = t.mine && t.node && !t.resolved && D.post && D.post.repo && !LOCAL && !S.reviewUrl;
+  return '<div class="th' + (S.cmc['th-' + t.id] ? ' cmc' : '') + '" id="th-' + esc(t.id) + '" role="group" aria-label="Existing thread by ' + esc(who) + '"><div class="thh">' + chev('th-' + t.id, 'thread') + '<span class="thk">' + (LOCAL ? 'Earlier round' : 'Existing thread') + '</span><span>' + t.comments.length + ' comment' + (t.comments.length === 1 ? '' : 's') + ' by ' + esc(who) + '</span>' +
     (loose ? '<span class="chip">' + (t.line == null ? 'outdated, was line ' + esc(t.original_line) : 'line ' + esc(t.line) + ', outside the diff') + '</span>' : '') +
-    (t.url ? '<a href="' + esc(t.url) + '" target="_blank" rel="noopener">open on GitHub</a>' : '') + '</div>' +
+    (t.url ? '<a href="' + esc(t.url) + '" target="_blank" rel="noopener">open on GitHub</a>' : '') + (resolved ? '<span class="chip res-chip">' + (S.reviewUrl && S.res[t.id] ? 'Resolved' : t.resolved ? 'Resolved' : 'Will resolve on submit') + '</span>' : '') + '</div>' +
     '<div class="thl' + (long && !open ? ' clamp' : '') + '">' + t.comments.map(c => '<div class="thc"><div class="tha"><b>' + esc(c.author) + '</b> <span class="mute">' + esc(c.at || '') + '</span></div><div class="thb md">' + md(c.body) + '</div></div>').join('') + '</div>' +
     (long ? btn('thopen', t.id, 'lnk thmore', open ? 'Show less' : 'Show the whole thread', 'tho-' + t.id) : '') +
     replies.map(ownBox).join('') +
-    (t.id != null && !replies.length && !S.reviewUrl ? '<div class="acts">' + btn('reply', t.id, 'btn sm', 'Reply', 'rep-' + t.id) + '</div>' : '') + '</div>';
+    (t.id != null && !S.reviewUrl && (!replies.length || canRes) ? '<div class="acts">' + (replies.length ? '' : btn('reply', t.id, 'btn sm', 'Reply', 'rep-' + t.id)) + (canRes ? btn('resolve', t.id, 'btn sm', S.res[t.id] ? 'Undo resolve' : 'Resolve', 'res-' + t.id) : '') + '</div>' : '') + '</div>';
 }
 
 /* ---------- diff with expandable context ---------- */
@@ -378,6 +379,8 @@ function act(a, id) {
   else if (a === 'ownapprove' || a === 'ownunapprove') { const o = ownByKey(id); if (o) o.dec = a === 'ownapprove' ? 'approved' : 'draft'; }
   else if (a === 'owndel') { const o = ownByKey(id); if (o && (!o.body.trim() || confirm('Delete this comment?'))) { S.own = S.own.filter(x => x !== o); S.status = 'Comment deleted'; } }
   else if (a === 'pv') { const [k, on] = id.split(':'); S.pv[k] = on === '1'; }
+  else if (a === 'resolve') { S.res[id] = !S.res[id]; S.status = S.res[id] ? 'Thread will be resolved when you submit' : 'Resolve undone'; }
+  else if (a === 'cmc') { S.cmc[id] = !S.cmc[id]; }
   else if (a === 'thopen') { S.thOpen[id] = !S.thOpen[id]; }
   else if (a === 'desc') { S.desc = !S.desc; }
   else if (a === 'onlyround') { S.onlyRound = !S.onlyRound; }
@@ -407,14 +410,15 @@ function payload() {
     comments: p.map(c => ({source: 'claude', key: c.key, title: c.title, path: byId[c.fid].path, line: c.line, side: 'RIGHT', body: txt(c)})).concat(lineOwn),
     files: op.filter(o => o.kind === 'file').map(o => ({path: byId[o.fid].path, body: o.body})),
     replies: op.filter(o => o.kind === 'reply').map(o => ({thread: o.thread, body: o.body})),
+    resolves: Object.keys(S.res).filter(k => S.res[k]),
     keys: p.map(c => c.key).concat(op.map(o => o.key))};
 }
 const dryNote = () => D.post.dry ? '\n(dry run: nothing is sent to GitHub)' : '';
 async function submitReview() {
-  const body = payload(), n = body.keys.length, und = countOf('draft'), ev = EVENTS.find(e => e[0] === S.event)[1];
+  const body = payload(), n = body.keys.length, nr = body.resolves.length, und = countOf('draft'), ev = EVENTS.find(e => e[0] === S.event)[1];
   if (S.busy || S.reviewUrl) return;
   const msg = LOCAL ? 'Send "' + ev + '" to Claude with ' + n + ' comment' + (n === 1 ? '' : 's') + '?\n' + consequence()
-    : 'Submit a "' + ev + '" review to ' + where + ' with ' + n + ' comment' + (n === 1 ? '' : 's') + '?' + dryNote() + '\n\nIt notifies the PR author and cannot be undone from here.';
+    : 'Submit a "' + ev + '" review to ' + where + ' with ' + n + ' comment' + (n === 1 ? '' : 's') + (nr ? ' and ' + nr + ' resolved thread' + (nr === 1 ? '' : 's') : '') + '?' + dryNote() + '\n\nIt notifies the PR author and cannot be undone from here.';
   if (!confirm(msg + (und ? '\n' + und + ' undecided Claude draft' + (und === 1 ? ' is' : 's are') + ' not included.' : ''))) return;
   S.busy = 'review'; S.reviewErr = ''; S.reviewWarn = ''; render();
   try {
