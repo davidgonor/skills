@@ -1,12 +1,12 @@
 ---
 name: assess-pr-review-comments
-description: Assess PR review feedback on a specific comment or a PR's unresolved threads.
+description: Assess PR review feedback on a specific comment or a PR's unresolved threads, and produce a visual report of verdicts, fixes and reply drafts.
 ---
 
 # Assess PR review comments
 
 1. **Select the threads.** For a pasted or linked comment, read that comment and its available replies. For a PR-wide assessment, use the specified PR or the current branch's PR, then read every unresolved, current review thread and its replies. Include resolved or outdated threads on request. Ask for the PR if it is needed and cannot be identified.
-2. **Assess and act.** Give each thread a verdict grounded in the current code, tests, contracts, or the PR's stated scope. Flag material uncertainty and apply the action below within the user's requested scope.
+2. **Assess and act.** Give each thread a verdict grounded in the current code, tests, contracts, or the PR's stated scope. Flag material uncertainty and apply the action below.
 
    | Verdict | Evidence | Action |
    | --- | --- | --- |
@@ -14,7 +14,8 @@ description: Assess PR review feedback on a specific comment or a PR's unresolve
    | False positive | The concern depends on a mistaken reading of the code or behavior | Explain the evidence in a short reply draft. |
    | Out of scope | The observation may be correct, but it does not need to be addressed for this PR | Explain the scope decision in a short reply draft. |
 
-3. **Report.** Give totals for threads assessed, fixed, reply only, and no action. Number each thread and include its location, a short quote, the verdict and evidence, the fix if any, and the reply draft or “none needed.” Note any uncommitted fixes and unposted drafts. If no threads qualify, report that directly. Otherwise, fill the [HTML template's `DATA` block](assets/preview-template.html) when the host supports inline rendering and every draft has a verified posting target. Use a Markdown table otherwise.
+3. **Render the visual report.** If no threads qualify, say so directly and stop. Otherwise fill the `DATA` block of the [HTML template](assets/preview-template.html) from the assessment (its comment lists the fields) and show it with the host's inline widget or visual tool. If the host has none, save the filled template as an HTML file and give its path. Write a `target` only for a thread whose comment ID you read; a thread without one gets no Reply control. Put uncommitted fixes and unposted drafts in `notDone`. Done when every assessed thread appears in `DATA.threads` and the stats match.
+4. **Fall back to Markdown.** Only if step 3 failed, give a numbered Markdown table with the same fields.
 
 ## Reply on request
 
