@@ -192,8 +192,6 @@ def check_review(req):
     if event not in events:
         raise ValueError(f"unknown review verdict {event}")
     body = str(req.get("body", "")).strip()
-    if not local_repo and event != "APPROVE" and not body:
-        raise ValueError("a Comment or Request changes review needs a summary")  # GitHub requires it
     cs = [check_comment(c) for c in req.get("comments", [])]
     files = []
     for f in req.get("files", []):

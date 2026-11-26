@@ -157,8 +157,8 @@ const consequence = () => !LOCAL ? '' : S.event === 'QUESTIONS' ? 'Claude answer
 
 function reviewBar() {
   const p = pending(), op = ownPending(), n = p.length + op.length, counts = SEV.map(s => [s, CM.filter(c => c.sev === s).length]).filter(x => x[1]);
-  const needBody = !LOCAL && S.event !== 'APPROVE', done = !!S.reviewUrl;
-  const canSubmit = LIVE && !done && S.busy !== 'review' && (!needBody || S.review.trim()) && (n || S.event === 'APPROVE' || S.review.trim());
+  const done = !!S.reviewUrl;
+  const canSubmit = LIVE && !done && S.busy !== 'review' && (n || S.event === 'APPROVE' || S.review.trim());
   const ownRows = S.own.map(o => '<li class="st-' + ownState(o) + '"><span class="chip you-chip">You</span>' +
     btn('jumpown', o.key, 'lnk', '<code class="ref">' + esc(base(ownPath(o))) + (o.kind === 'line' ? ':' + o.end.line : '') + '</code> ' + esc(ownLabel(o)) + ': ' + esc((o.body || '(empty)').split('\n')[0].slice(0, 80)), 'allo-' + o.key) +
     '<span class="stc ' + ownState(o) + '">' + STN[ownState(o)] + '</span></li>').join('');
@@ -170,7 +170,7 @@ function reviewBar() {
     '<ol class="alld">' + BYSEV.map(c => '<li class="st-' + stateOf(c) + '">' + sevChip(c.sev) +
       btn('jump', c.fid + ':' + c.line + ':cm', 'lnk', '#' + c.n + ' <code class="ref">' + esc(base(byId[c.fid].path)) + ':' + c.line + '</code> ' + esc(c.title), 'all-' + c.key) +
       '<span class="stc ' + stateOf(c) + '">' + STN[stateOf(c)] + '</span></li>').join('') + ownRows + '</ol>' +
-    '<label class="rbody"><span>' + (LOCAL ? 'Note for Claude (optional)' : 'Review summary, posted as the review body' + (needBody ? ' (required)' : ' (optional)')) + '</span><textarea class="draft rb" data-edit="__review" rows="3"' + (done ? ' readonly' : '') + '>' + esc(S.review) + '</textarea></label>' +
+    '<label class="rbody"><span>' + (LOCAL ? 'Note for Claude (optional)' : 'Review summary, posted as the review body (optional)') + '</span><textarea class="draft rb" data-edit="__review" rows="3"' + (done ? ' readonly' : '') + '>' + esc(S.review) + '</textarea></label>' +
     '<div class="verdict" role="radiogroup" aria-label="Review verdict">' + EVENTS.map(([v, l]) => btn('event', v, 'vd' + (S.event === v ? ' on' : ''), l, 'ev-' + v, 'role="radio" aria-checked="' + (S.event === v) + '"' + (done ? ' disabled' : ''))).join('') +
     (LOCAL && S.event === 'APPROVE' ? btn('ready', '', 'viewed rdy' + (S.ready ? ' on' : ''), (S.ready ? '&#9745;' : '&#9744;') + ' Open the PR as ready for review', 'ready', 'aria-pressed="' + S.ready + '"' + (done ? ' disabled' : '')) : '') + '</div>' +
     (LOCAL ? '<p class="ro">' + consequence() + '</p>' : '') +
